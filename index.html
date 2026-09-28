@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zahnputz-Zeit</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: #0A0E24; }
+  body {
+    font-family: 'Nunito', system-ui, sans-serif;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #screens {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 460px;
+    flex: 1;
+    min-height: 0;
+  }
+  .switcher {
+    display: flex;
+    gap: 10px;
+    padding: 14px 14px 0;
+    width: 100%;
+    max-width: 460px;
+    flex: 0 0 auto;
+  }
+  .tab {
+    flex: 1;
+    border: none;
+    border-radius: 999px;
+    padding: 10px 0;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: #C9BEEA;
+    background: rgba(255,255,255,0.08);
+    cursor: pointer;
+  }
+  .tab.active { background: #FFFFFF; color: #2E2A5C; }
+
+  .screen {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background: linear-gradient(180deg, #0D1339 0%, #1C2B63 55%, #2E2A5C 100%);
+    display: flex;
+    flex-direction: column;
+  }
+
+  @keyframes shine-sparkle { 0%,100%{opacity:.45;transform:scale(.82);} 50%{opacity:1;transform:scale(1.12);} }
+  @keyframes brush-sweep { 0%,100%{transform:translateX(-92px) rotate(-30deg);} 50%{transform:translateX(92px) rotate(-16deg);} }
+  @keyframes foam-pop { 0%,100%{opacity:.55;transform:translateY(0) scale(.9);} 50%{opacity:1;transform:translateY(-4px) scale(1.05);} }
+  @keyframes float-up { 0%{transform:translateY(0);opacity:0;} 8%{opacity:.95;} 88%{opacity:.95;} 100%{transform:translateY(-900px);opacity:0;} }
+  @keyframes rocket-fly { 0%{transform:translateY(0);opacity:1;} 42%{transform:translateY(var(--peak));opacity:1;} 52%,100%{transform:translateY(var(--peak));opacity:0;} }
+  @keyframes firework-burst { 0%,40%{transform:translateY(var(--peak)) scale(.15);opacity:0;} 48%{transform:translateY(var(--peak)) scale(1);opacity:1;} 70%{transform:translateY(var(--peak)) scale(1.6);opacity:.55;} 86%,100%{transform:translateY(var(--peak)) scale(1.9);opacity:0;} }
+
+  .name-row { position: relative; padding: 22px 26px 0; text-align: center; flex: 0 0 auto; }
+  .hallo { font-family: 'Baloo 2', sans-serif; font-weight: 700; font-size: 24px; color: #F5E9D6; }
+  .name-wrap { margin-top: 8px; position: relative; display: inline-block; }
+  .name-wrap svg { position: absolute; left: -26px; top: 50%; transform: translateY(-50%); }
+  .name-input {
+    display: block; border: none; border-bottom: 2px solid rgba(255,255,255,0.4);
+    background: transparent; width: 190px; font-family: 'Baloo 2', sans-serif; font-weight: 700;
+    font-size: 24px; color: #FFFFFF; text-align: center; text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  }
+  .name-input::placeholder { color: rgba(255,255,255,0.55); }
+  .name-input:focus { outline: none; }
+
+  .cam-area { position: relative; flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  .cam-frame { position: relative; width: 280px; height: 280px; max-width: 76%; max-height: 76%; }
+  .cam-circle {
+    position: absolute; inset: 10px; border-radius: 50%; overflow: hidden;
+    background: #12162E; box-shadow: 0 18px 40px rgba(0,0,0,0.4);
+  }
+  .cam-circle video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none; }
+  .cam-fallback {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; padding: 20px; text-align: center; background: linear-gradient(180deg, #1C2B63, #2E2A5C);
+  }
+  .cam-fallback.hidden { display: none; }
+  .cam-fallback b { font-family: 'Baloo 2', sans-serif; font-weight: 700; font-size: 14px; color: #F5E9D6; }
+  .cam-fallback span { font-size: 11px; color: #C9BEEA; font-weight: 600; }
+  .brush-sticker { position: absolute; top: 6px; right: 6px; z-index: 3; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); display: none; }
+  .brush-sticker.on { display: block; }
+  .brush-sticker g.wiggle { animation: brush-sweep 1.5s ease-in-out infinite; transform-origin: 30px 38px; }
+
+  .finished-msg { position: relative; display: none; align-items: center; justify-content: center; gap: 8px; padding: 0 26px; flex: 0 0 auto; }
+  .finished-msg.on { display: flex; }
+  .finished-msg span { font-family: 'Baloo 2', sans-serif; font-weight: 700; font-size: 16px; color: #66D89B; }
+
+  .controls { position: relative; flex: 0 0 auto; display: flex; align-items: stretch; gap: 14px; padding: 14px 26px 30px; }
+  .btn-start {
+    flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 10px;
+    border: none; border-radius: 26px; padding: 18px; box-shadow: 0 12px 26px rgba(0,0,0,0.35); cursor: pointer;
+  }
+  .btn-start span { font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: 0.04em; color: #FFFFFF; }
+  .timer-chip {
+    position: relative; flex: 0 0 110px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; border-radius: 26px; box-shadow: 0 12px 26px rgba(0,0,0,0.35);
+  }
+  .timer-chip .time { font-family: 'Baloo 2', sans-serif; font-weight: 700; font-size: 24px; letter-spacing: 0.05em; }
+  .timer-chip .cap { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #C9BEEA; }
+  .reset-btn {
+    position: absolute; top: -10px; right: -10px; width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.85); background: #2A2352; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+  }
+
+  .icon-layer, .fw-layer { position: absolute; inset: 0; pointer-events: none; }
+  .fw-layer { display: none; }
+  .fw-layer.on { display: block; }
+</style>
+</head>
+<body>
+<div class="switcher">
+  <button class="tab active" data-kid="0">Jonah</button>
+  <button class="tab" data-kid="1">Hannah</button>
+</div>
+<div id="screens"></div>
+
+<script>
+const TOTAL_SECONDS = 120;
+const RING_R = 132;
+const RING_C = 2 * Math.PI * RING_R;
+
+const KIDS_CONFIG = [
+  { name: 'Jonah', accent: '#FF8A5C', theme: 'vehicles' },
+  { name: 'Hannah', accent: '#6FB8D9', theme: 'fantasy' }
+];
+
+function mulberry32(seed) {
+  return function () {
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function buildStars(seed) {
+  const rand = mulberry32(seed);
+  let svg = '';
+  for (let i = 0; i < 45; i++) {
+    const r = (1.6 + rand() * 2.6).toFixed(2);
+    const op = (0.6 + rand() * 0.4).toFixed(2);
+    svg += `<circle cx="${Math.round(rand() * 300)}" cy="${Math.round(rand() * 560)}" r="${r}" fill="#FFFFFF" opacity="${op}"></circle>`;
+  }
+  return svg;
+}
+
+const THEME_ICONS = {
+  vehicles: [
+    { x: 40, delay: 0, dur: 9, scale: 1.4, svg: `<path d="M-27 6 Q-27 -4 -17 -4 L-11 -13 Q-7 -18 3 -18 L13 -14 L21 -4 Q27 -4 27 6 L27 10 L-27 10 Z" fill="#E4483C"></path><path d="M-9 -13 L-4 -17 Q-1 -18.5 3 -18.5 L11 -14.5 L14 -5 L-6 -5 Z" fill="#BFE3F2"></path><rect x="-27" y="4" width="54" height="4.5" fill="#A82E24"></rect><circle cx="-15" cy="12" r="8.5" fill="#241C16"></circle><circle cx="16" cy="12" r="8.5" fill="#241C16"></circle>` },
+    { x: 210, delay: 4.5, dur: 10, scale: 1.4, svg: `<path d="M-21 9 L-21 -1 Q-21 -6 -15 -6 L-3 -6 L4 -15 L15 -15 L15 -1 L21 -1 L21 9 Z" fill="#5FAE52"></path><rect x="4" y="-14" width="10" height="9" rx="1.4" fill="#CDEFE3"></rect><circle cx="-11" cy="10" r="5" fill="#241C16"></circle><circle cx="14" cy="13" r="12" fill="#241C16"></circle><circle cx="14" cy="13" r="7" fill="#3E6B37"></circle>` },
+    { x: 130, delay: 2, dur: 11, scale: 1.4, svg: `<rect x="-16" y="4" width="34" height="8" rx="3" fill="#3A2E22"></rect><rect x="-12" y="-6" width="22" height="12" rx="3" fill="#F2A93A"></rect><rect x="-9" y="-14" width="12" height="9" rx="2" fill="#F2A93A"></rect><path d="M4 -9 L21 -20" stroke="#B5761F" stroke-width="5.5" stroke-linecap="round"></path><path d="M21 -20 L30 -11" stroke="#C98B32" stroke-width="4.5" stroke-linecap="round"></path><path d="M30 -11 L37 -3 L27 1 L22 -7 Z" fill="#B5761F"></path>` }
+  ],
+  fantasy: [
+    { x: 50, delay: 0.5, dur: 9.5, scale: 1.3, svg: `<path d="M-17 6 Q-19 -6 -6 -9 Q7 -11 15 -4 Q21 -1 19 4 Q17 11 6 12 Q-9 13 -17 6 Z" fill="#F8ECFF"></path><path d="M15 -4 Q23 -9 27 -17 Q29 -21 25 -19 Q20 -14 17 -9 Z" fill="#F8ECFF"></path><path d="M24 -19 L27 -29 L23 -20 Z" fill="#F2C14E"></path><path d="M-16 6 Q-26 10 -24 19" stroke="#E2A6F2" stroke-width="3.6" fill="none" stroke-linecap="round"></path>` },
+    { x: 200, delay: 3, dur: 11, scale: 1.3, svg: `<path d="M-17 6 Q-19 -6 -6 -9 Q7 -11 15 -4 Q21 -1 19 4 Q17 11 6 12 Q-9 13 -17 6 Z" fill="#C98B5E"></path><path d="M15 -4 Q23 -9 27 -17 Q29 -21 25 -19 Q20 -14 17 -9 Z" fill="#C98B5E"></path><path d="M-16 6 Q-26 10 -24 19" stroke="#7A4B2E" stroke-width="3.6" fill="none" stroke-linecap="round"></path>` },
+    { x: 120, delay: 1.5, dur: 9, scale: 1.1, svg: `<path d="M-10 -4 Q-18 -6 -16 4 Q-10 4 -6 -2 Z" fill="#F6C6E0"></path><path d="M10 -4 Q18 -6 16 4 Q10 4 6 -2 Z" fill="#F6C6E0"></path><circle cx="0" cy="-8" r="4" fill="#F2C9A0"></circle><path d="M-5 -3 Q0 -6 5 -3 L4 10 Q0 13 -4 10 Z" fill="#B98BD9"></path>` }
+  ]
+};
+
+const FIREWORKS = [
+  [30, 0, 2.4, -460, '#F2C14E'],
+  [110, 0.6, 2.2, -500, '#FF6F61'],
+  [190, 1.1, 2.6, -430, '#5FC9A8'],
+  [260, 0.3, 2.3, -490, '#6FB8D9'],
+  [320, 1.6, 2.5, -400, '#C77DE0']
+];
+
+function iconLayerSvg(theme) {
+  return THEME_ICONS[theme].map((ic) => `
+    <g transform="translate(${ic.x},420) scale(${ic.scale})">
+      <g class="drift" style="animation: float-up ${ic.dur}s linear infinite ${ic.delay}s;">${ic.svg}</g>
+    </g>`).join('');
+}
+
+function fireworksSvg() {
+  return FIREWORKS.map(([x, delay, dur, peak, color]) => `
+    <g transform="translate(${x},420)">
+      <g style="--peak:${peak}px; animation: rocket-fly ${dur}s ease-out infinite ${delay}s;">
+        <path d="M0 -12 Q5 -6 5 4 L-5 4 Q-5 -6 0 -12 Z" fill="${color}"></path>
+        <path d="M-5 4 L-8 14 L-2 8 Z" fill="#F2C14E"></path>
+        <path d="M5 4 L8 14 L2 8 Z" fill="#F2C14E"></path>
+      </g>
+      <g style="--peak:${peak}px; animation: firework-burst ${dur}s ease-out infinite ${delay}s;">
+        <g stroke="${color}" stroke-width="2.6" stroke-linecap="round">
+          <line x1="0" y1="0" x2="0" y2="-24"></line><line x1="0" y1="0" x2="17" y2="-17"></line>
+          <line x1="0" y1="0" x2="24" y2="0"></line><line x1="0" y1="0" x2="17" y2="17"></line>
+          <line x1="0" y1="0" x2="0" y2="24"></line><line x1="0" y1="0" x2="-17" y2="17"></line>
+          <line x1="0" y1="0" x2="-24" y2="0"></line><line x1="0" y1="0" x2="-17" y2="-17"></line>
+        </g>
+        <g fill="${color}">
+          <circle cx="0" cy="-24" r="2.4"></circle><circle cx="17" cy="-17" r="2.4"></circle>
+          <circle cx="24" cy="0" r="2.4"></circle><circle cx="17" cy="17" r="2.4"></circle>
+          <circle cx="0" cy="24" r="2.4"></circle><circle cx="-17" cy="17" r="2.4"></circle>
+          <circle cx="-24" cy="0" r="2.4"></circle><circle cx="-17" cy="-17" r="2.4"></circle>
+        </g>
+      </g>
+    </g>`).join('');
+}
+
+function screenTemplate(idx, cfg) {
+  return `
+  <div class="screen" data-screen="${idx}" style="${idx === 0 ? '' : 'display:none'}">
+    <svg class="icon-layer" style="z-index:1" viewBox="0 0 300 560" preserveAspectRatio="none" aria-hidden="true">
+      <path fill-rule="evenodd" fill="#FFF3D6" opacity="0.95" d="M46 40 A26 26 0 1 0 46 92 A26 26 0 1 0 46 40 Z M58 44 A22 22 0 1 1 58 88 A22 22 0 1 1 58 44 Z"></path>
+      ${buildStars(idx === 0 ? 7331 : 4211)}
+    </svg>
+
+    <div class="name-row">
+      <div class="hallo">Hallo,</div>
+      <div class="name-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 20 L14 10 L18 14 L8 20 Z" fill="#F3C6A8"></path>
+          <path d="M14 10 L17 7 L20 10 L18 14 Z" fill="#FF8A5C"></path>
+        </svg>
+        <input class="name-input" data-role="name" maxlength="18" placeholder="Name eingeben" value="${cfg.name}">
+      </div>
+    </div>
+
+    <div class="cam-area">
+      <div class="cam-frame">
+        <svg width="280" height="280" viewBox="0 0 280 280" style="position:absolute; inset:0; z-index:2; pointer-events:none;" aria-hidden="true">
+          <circle cx="140" cy="140" r="${RING_R}" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="6"></circle>
+          <circle data-role="ring" cx="140" cy="140" r="${RING_R}" fill="none" stroke="${cfg.accent}" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 ${RING_C.toFixed(1)}" transform="rotate(-90 140 140)"></circle>
+        </svg>
+        <div class="cam-circle">
+          <video data-role="video" autoplay playsinline muted></video>
+          <div class="cam-fallback" data-role="fallback">
+            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M3 6 L21 6 Q22 6 22 7 L22 17 Q22 18 21 18 L3 18 Q2 18 2 17 L2 7 Q2 6 3 6 Z" stroke="#C9BEEA" stroke-width="1.6"></path>
+              <circle cx="12" cy="12" r="4" stroke="#C9BEEA" stroke-width="1.6"></circle>
+              <line x1="2" y1="21" x2="22" y2="3" stroke="#FF8A5C" stroke-width="2.2" stroke-linecap="round"></line>
+            </svg>
+            <b data-role="fallback-title">Kamera wird gestartet …</b>
+            <span data-role="fallback-sub">Bitte Kamerazugriff erlauben</span>
+          </div>
+        </div>
+        <svg class="brush-sticker" data-role="brush" width="56" height="70" viewBox="0 0 60 76" aria-hidden="true">
+          <g class="wiggle">
+            <rect x="22" y="34" width="16" height="38" rx="8" fill="#6FB8D9"></rect>
+            <rect x="18" y="14" width="24" height="22" rx="9" fill="#EAF6FA"></rect>
+            <g stroke="#FFFFFF" stroke-width="3" stroke-linecap="round">
+              <line x1="22" y1="14" x2="20" y2="4"></line><line x1="30" y1="14" x2="29" y2="2"></line><line x1="38" y1="14" x2="40" y2="4"></line>
+            </g>
+            <circle cx="46" cy="10" r="6" fill="#FFFFFF" style="animation: foam-pop 1.1s ease-in-out infinite;"></circle>
+          </g>
+        </svg>
+      </div>
+      <svg class="icon-layer" style="z-index:1" viewBox="0 0 300 560" preserveAspectRatio="none" aria-hidden="true" data-role="icons">
+        ${iconLayerSvg(cfg.theme)}
+      </svg>
+      <svg class="fw-layer" data-role="fireworks" viewBox="0 0 300 560" preserveAspectRatio="none" aria-hidden="true">
+        ${fireworksSvg()}
+      </svg>
+    </div>
+
+    <div class="finished-msg" data-role="finished">
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L14 10 L22 12 L14 14 L12 22 L10 14 L2 12 L10 10 Z" fill="#66D89B"></path></svg>
+      <span>Super gemacht! Fertig geputzt.</span>
+    </div>
+
+    <div class="controls">
+      <button class="btn-start" data-role="start" style="background:${cfg.accent};">
+        <svg data-role="start-icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5 L19 12 L7 19 Z" fill="#FFFFFF"></path></svg>
+        <span data-role="start-label">START</span>
+      </button>
+      <div class="timer-chip" data-role="timer-chip" style="background:#4A3B7A;">
+        <span class="time" data-role="time" style="color:${cfg.accent};">02:00</span>
+        <span class="cap" data-role="cap">Minuten</span>
+        <button class="reset-btn" data-role="reset" aria-label="Zurücksetzen">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 12a8 8 0 1 1 2.5 5.8" stroke="#F5E9D6" stroke-width="2.4" stroke-linecap="round" fill="none"></path>
+            <path d="M4 12 L4 6 M4 12 L9.5 12" stroke="#F5E9D6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+document.getElementById('screens').innerHTML = KIDS_CONFIG.map((cfg, i) => screenTemplate(i, cfg)).join('');
+
+function createController(idx, cfg) {
+  const root = document.querySelector(`.screen[data-screen="${idx}"]`);
+  const q = (role) => root.querySelector(`[data-role="${role}"]`);
+  const state = { secondsLeft: TOTAL_SECONDS, running: false, timerId: null };
+
+  function setButton() {
+    const finished = state.secondsLeft <= 0;
+    q('start-label').textContent = finished ? 'NOCHMAL' : state.running ? 'PAUSE' : (state.secondsLeft < TOTAL_SECONDS ? 'WEITER' : 'START');
+    q('start-icon').innerHTML = state.running
+      ? '<path d="M7 5 H10 V19 H7 Z M14 5 H17 V19 H14 Z" fill="#FFFFFF"></path>'
+      : '<path d="M7 5 L19 12 L7 19 Z" fill="#FFFFFF"></path>';
+  }
+
+  function render() {
+    const mm = Math.floor(state.secondsLeft / 60);
+    const ss = state.secondsLeft % 60;
+    q('time').textContent = (mm < 10 ? '0' + mm : mm) + ':' + (ss < 10 ? '0' + ss : ss);
+    const finished = state.secondsLeft <= 0;
+    q('cap').textContent = finished ? 'Fertig!' : 'Minuten';
+    q('timer-chip').style.background = finished ? '#3FAE79' : '#4A3B7A';
+    q('finished').classList.toggle('on', finished);
+    root.querySelector('.brush-sticker').classList.toggle('on', state.running);
+    root.querySelector('[data-role="fireworks"]').classList.toggle('on', finished);
+    const elapsed = TOTAL_SECONDS - state.secondsLeft;
+    const progress = Math.min(1, elapsed / TOTAL_SECONDS);
+    q('ring').setAttribute('stroke-dasharray', (RING_C * progress).toFixed(1) + ' ' + RING_C.toFixed(1));
+    setButton();
+  }
+
+  function tick() {
+    state.secondsLeft -= 1;
+    if (state.secondsLeft <= 0) {
+      state.secondsLeft = 0;
+      state.running = false;
+      clearInterval(state.timerId);
+      state.timerId = null;
+    }
+    render();
+  }
+
+  function start() {
+    if (state.timerId) return;
+    state.timerId = setInterval(tick, 1000);
+    state.running = true;
+    render();
+  }
+  function pause() {
+    if (state.timerId) { clearInterval(state.timerId); state.timerId = null; }
+    state.running = false;
+    render();
+  }
+  function reset() {
+    if (state.timerId) { clearInterval(state.timerId); state.timerId = null; }
+    state.secondsLeft = TOTAL_SECONDS;
+    state.running = false;
+    render();
+  }
+
+  q('start').addEventListener('click', () => {
+    if (state.secondsLeft <= 0) { state.secondsLeft = TOTAL_SECONDS; start(); }
+    else if (state.running) pause();
+    else start();
+  });
+  q('reset').addEventListener('click', reset);
+
+  render();
+
+  return {
+    setCameraActive(stream) {
+      const video = q('video');
+      video.srcObject = stream;
+      video.style.display = 'block';
+      q('fallback').classList.add('hidden');
+    },
+    setCameraUnavailable(reason) {
+      q('fallback-title').textContent = 'Kamera nicht verfügbar';
+      q('fallback-sub').textContent = reason || 'Bitte in den Einstellungen erlauben';
+    }
+  };
+}
+
+const controllers = KIDS_CONFIG.map((cfg, i) => createController(i, cfg));
+
+// Start the front camera once; the same live stream feeds whichever kid screen is shown.
+if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+    .then((stream) => controllers.forEach((c) => c.setCameraActive(stream)))
+    .catch((err) => controllers.forEach((c) => c.setCameraUnavailable(err && err.name === 'NotAllowedError' ? 'Zugriff wurde nicht erlaubt' : null)));
+} else {
+  controllers.forEach((c) => c.setCameraUnavailable('Dieser Browser unterstützt keine Kamera'));
+}
+
+document.querySelectorAll('.tab').forEach((tab) => {
+  tab.addEventListener('click', () => {
+    const idx = tab.getAttribute('data-kid');
+    document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
+    document.querySelectorAll('.screen').forEach((s) => {
+      s.style.display = s.getAttribute('data-screen') === idx ? 'flex' : 'none';
+    });
+  });
+});
+</script>
+</body>
+</html>
